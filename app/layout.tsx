@@ -1,8 +1,19 @@
 import type { Metadata } from "next";
+import { Newsreader } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { absoluteUrl, site, siteUrl } from "@/lib/site";
+
+// Serif for headings, system sans for body: the heading carries character,
+// the body stays maximally legible at 19px over 2,000 words.
+const serif = Newsreader({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-serif",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -26,7 +37,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={serif.variable}>
       <body>
         <Header />
         {children}

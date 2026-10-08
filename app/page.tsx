@@ -14,9 +14,7 @@ export default function HomePage() {
   return (
     <main className="max-w-5xl mx-auto px-6 pt-16">
       <section className="max-w-2xl mb-16">
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-4" style={{ letterSpacing: "-0.025em" }}>
-          {site.title}
-        </h1>
+        <h1 className="display mb-5">{site.title}</h1>
         <p className="text-lg leading-relaxed" style={{ color: "var(--fg-muted)" }}>
           {site.description}
         </p>
@@ -39,7 +37,7 @@ export default function HomePage() {
                     </span>
                   )}
                 </div>
-                <h2 className="text-xl font-semibold tracking-tight mb-1.5">
+                <h2 className="post-title mb-1.5">
                   <Link href={`/${post.slug}`} className="hover:underline" style={{ textUnderlineOffset: "3px" }}>
                     {post.title}
                   </Link>

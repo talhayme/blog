@@ -5,6 +5,7 @@ import { getAllPosts, getPost } from "@/lib/posts";
 import { renderMarkdown, extractToc } from "@/lib/markdown";
 import { absoluteUrl, site } from "@/lib/site";
 import Toc from "@/components/Toc";
+import CodeCopy from "@/components/CodeCopy";
 
 export function generateStaticParams() {
   return getAllPosts().map((post) => ({ slug: post.slug }));
@@ -72,10 +73,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
             <Link href="/" className="text-sm hover:underline" style={{ color: "var(--fg-subtle)" }}>
               ← All posts
             </Link>
-            <h1 className="text-3xl sm:text-[2.1rem] font-semibold tracking-tight mt-4 mb-3"
-                style={{ letterSpacing: "-0.025em", lineHeight: 1.2 }}>
-              {post.title}
-            </h1>
+            <h1 className="display mt-5 mb-4">{post.title}</h1>
             <div className="flex flex-wrap items-center gap-3 text-sm" style={{ color: "var(--fg-subtle)" }}>
               <time dateTime={post.date}>{formatDate(post.date)}</time>
               <span>·</span>
@@ -84,6 +82,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
           </header>
 
           <div className="prose" dangerouslySetInnerHTML={{ __html: html }} />
+          <CodeCopy />
 
           <div className="mt-16 pt-8 max-w-2xl" style={{ borderTop: "1px solid var(--border)" }}>
             <p className="text-sm leading-relaxed" style={{ color: "var(--fg-muted)" }}>
