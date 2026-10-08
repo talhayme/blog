@@ -5,17 +5,17 @@ date: 2026-10-08
 tags: [llm, production, architecture, reliability]
 ---
 
-Most writing about AI products stops at the demo. The model answers, the
-screenshot looks good, the post ends.
+The largest document the service has translated was 1,130 pages. It arrived
+as a 154 MB PDF, went through the pipeline, and came back with its figures,
+tables and footnotes where the author left them.
 
-The interesting part starts after that — when real customers send real
-documents, one provider has a bad minute, and the inference bill arrives. I
-have been running **BookahTranslate** since late 2025: a service that
-translates PDF, EPUB and DOCX up to 300+ pages while keeping the layout
-intact. It has regular customers, recurring revenue, and it runs on one small
-server.
+Getting that to work reliably — not once, but as a thing customers pay for
+every month — took far more engineering around the model than inside it. I
+have been running **BookahTranslate** since late 2025: PDF, EPUB and DOCX
+translation that preserves layout. To date it has processed 27,000+ pages and
+54 million characters, for regular customers, on one small server.
 
-This is what the engineering actually looks like.
+This is what that engineering actually looks like.
 
 ## The problem
 
@@ -75,6 +75,72 @@ beyond the model APIs.
 services and sits at roughly a third of memory free. I mention this because
 the default assumption in AI-infrastructure writing is a budget that most
 products never need.
+
+## The problem nobody warns you about: where to cut
+
+A 1,130-page book does not fit in a context window, so it has to be cut into
+pieces. This sounds like a solved problem — split every N characters, send,
+reassemble — and it is the single largest source of bad output if you do it
+that way.
+
+Cut mid-sentence and the model finishes the thought on its own, inventing an
+ending that never existed in the source. Cut mid-paragraph and the second
+half arrives without the subject of its own argument, so pronouns resolve to
+nothing and the model guesses. Neither failure is visible in a diff: the
+output reads fluently and says something the author did not write.
+
+The fix is to never cut at an arbitrary offset. Paragraphs are the natural
+unit, and they get packed into chunks up to a budget rather than split to
+fill one:
+
+```python
+def _chunk_paragraphs(paragraphs, max_chars=3500):
+    """Group paragraphs into chunks without breaking them."""
+    chunks, current_chunk, current_length = [], [], 0
+
+    for para in paragraphs:
+        para_len = len(para)
+
+        if para_len > max_chars:
+            # A single paragraph over budget — flush what we have, then fall
+            # back to sentence boundaries. Never mid-sentence.
+            if current_chunk:
+                chunks.append("\n\n".join(current_chunk))
+                current_chunk, current_length = [], 0
+
+            sentences = re.split(r"(?<=[.!?])\s+", para)
+            sent_chunk, sent_length = [], 0
+            for sent in sentences:
+                if sent_length + len(sent) > max_chars and sent_chunk:
+                    chunks.append(" ".join(sent_chunk))
+                    sent_chunk, sent_length = [], 0
+                sent_chunk.append(sent)
+                sent_length += len(sent) + 1
+            if sent_chunk:
+                chunks.append(" ".join(sent_chunk))
+
+        elif current_length + para_len > max_chars and current_chunk:
+            chunks.append("\n\n".join(current_chunk))
+            current_chunk, current_length = [para], para_len
+        else:
+            current_chunk.append(para)
+            current_length += para_len + 2
+
+    if current_chunk:
+        chunks.append("\n\n".join(current_chunk))
+    return chunks
+```
+
+The degradation ladder is the point: paragraph boundary first, sentence
+boundary only when a single paragraph exceeds the budget, and never a cut
+inside a sentence. A legal document with one 6,000-character clause still
+gets split — but at a full stop, where the model can tell that a thought
+ended rather than guessing that it continued.
+
+The 3,500-character budget is empirical, not principled. Larger chunks mean
+fewer calls and better cross-sentence consistency; smaller chunks mean a
+retry costs less when a provider fails mid-document. This number is where
+those two pressures balanced for this content.
 
 ## The three things that decide whether it survives
 
@@ -254,10 +320,27 @@ feels important. Where customers actually stop is the part that pays.
 
 BookahTranslate runs on
 [bookahtranslate.tech](https://bookahtranslate.tech) and through a Telegram
-bot, with recurring customers and steady monthly revenue. Current work is a
-B2B pilot with a university — institutional volume is a different shape of
-problem from individual orders, and most of what is above was built to make
-that transition possible rather than terrifying.
+bot, with recurring customers and steady monthly revenue. Average document:
+76 pages. Largest so far: 1,130.
+
+Current work is a B2B pilot with a university, and institutional volume is a
+genuinely different shape of problem. An individual customer sends one
+document and waits. A department sends forty and expects them all by Friday —
+which turns a pipeline that handles documents into one that has to schedule
+them, with some tenant's work necessarily waiting behind another's. Billing
+stops being one card charge and becomes an invoice someone in finance has to
+reconcile against a list of jobs. And a mistake no longer costs one refund;
+it costs the relationship.
+
+Every piece above exists because of that transition. Per-page accounting with
+a ledger is overkill for a single customer and the only sane basis for an
+invoice. Provider fallback matters more when the deadline is institutional
+than when one person can retry tomorrow. An evaluation gate is a convenience
+for solo work and a prerequisite for promising consistent quality across
+forty documents.
+
+None of that was foresight. It was built because each problem showed up
+first at small scale, where getting it wrong was cheap.
 
 It is a small business, run by one engineer, and it has been the best
 education I could have bought. Everything I know about LLM systems in
