@@ -264,5 +264,5 @@ pr-witness 0.3.1 is on [PyPI](https://pypi.org/project/pr-witness/) and the
 [GitHub Marketplace](https://github.com/marketplace/actions/pr-witness);
 the corpus and every number above are in the
 [repository](https://github.com/talhayme/pr-witness). SWE-chat is by
-SALT-NLP, ODC-BY; thank you for publishing the commits and not just the
-conversations.
+SALT-NLP ([Baumann et al., COLM 2026](https://arxiv.org/abs/2604.20779)),
+ODC-BY; thank you for publishing the commits and not just the conversations.
