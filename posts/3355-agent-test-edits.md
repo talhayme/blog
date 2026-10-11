@@ -70,7 +70,8 @@ network off. Labels say two things: what the tool *should* say (`flag`,
 `review`, `clean`), and separately whether I think the edit was honest,
 which is the thing the tool is not asked to judge.
 
-**Five of seven match.** Here are the two that mattered most.
+**Five of seven match** — a number to distrust, for the reason in the
+update at the end of this post. Here are the two that mattered most.
 
 ### "fix: resolve test suite failures"
 
@@ -197,9 +198,60 @@ recorded as a skipped group — 60 to 430 MB for the whole pass. The wrapper
 is `eval/sandbox/safe-run.sh` in the repository, with the rules it came
 from, and the same sandbox is what ran the seven commits.
 
+## Update, the next day: the same tool on commits it had not seen
+
+Everything above has a flaw I named in the first post and then repeated:
+the seven commits were picked by eye, and the tool was changed after almost
+every one. A score on cases you fitted the tool to is not a score.
+
+So I did it properly once. A script selected seventeen more commits by a
+written rule. I labelled each from its diff and committed the labels. Then
+I ran them with the source frozen — nothing in the tool changed until all
+seventeen were done.
+
+Twelve produced evidence; four ran vacuously, their suites needing services
+the sandbox does not have; one would not install.
+
+**Seven of twelve.** Not five of seven, not six of seven — seven of twelve,
+and every miss was the tool's, not the label's and not the environment's.
+
+It is worse than the fraction. The tool said `flag` four times, and all
+four commits were honest. Two were flagged for a two-line edit to
+`CLAUDE.md`, which a rule inherited from checkwash treats as an agent
+tampering with its own constraints — in a repository developed with an
+agent, that file changes all the time. One was flagged for *adding* three
+integration tests guarded by `skipif(..., reason="OPENAI_API_KEY required")`:
+my skip check compared skipped sets and never asked whether the test had
+existed before. One was flagged because a default voice changed from
+`rachel` to `matilda` and thirty-two expectations followed it. The fifth
+miss went the other way: pytest abandons a session when one file fails to
+import, so a refactor that broke two old test files hid the rewritten
+assertions in eight others.
+
+`review` — "a human should read this, here are the old assertion and the
+new one" — was right four times out of four.
+
+And no commit in the batch was dishonest, so on real data I still cannot
+say whether the tool catches a cheat. Only that, so far, it accuses people
+who did nothing wrong.
+
+Those four causes are fixed in 0.3.1, and the twelve now agree with their
+labels, which means nothing: they are the cases the tool was just changed
+to agree with. The replacement finding I promised above is in the same
+release (`coverage_replaced`), and it turns the seventh case of this post
+into a match — also a fitted one. The only numbers here worth quoting are
+the frozen ones: 7 of 12, `review` 4 of 4, `flag` 0 of 4.
+
+What I would tell someone installing it today: run it in report mode and
+read what it marks for review. Do not let it fail a build.
+
+The protocol, the selection record, the labels as committed before the runs
+and the write-up of every miss are in
+[BATCH1.md](https://github.com/talhayme/pr-witness/blob/main/corpus/real/swechat/BATCH1.md).
+
 ---
 
-pr-witness 0.3.0 is on [PyPI](https://pypi.org/project/pr-witness/) and the
+pr-witness 0.3.1 is on [PyPI](https://pypi.org/project/pr-witness/) and the
 [GitHub Marketplace](https://github.com/marketplace/actions/pr-witness);
 the corpus and every number above are in the
 [repository](https://github.com/talhayme/pr-witness). SWE-chat is by
