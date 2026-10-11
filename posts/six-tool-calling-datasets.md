@@ -1,6 +1,6 @@
 ---
 title: "What the trainer does to six tool-calling datasets"
-description: "1,500 rows from each of the most-downloaded function-calling datasets, rendered through the model's own tokenizer and chat template. At max_seq_len=2048, 38% of hermes-function-calling-v1 is cut before the answer. Plus two things found on the way: Ollama hands the model a Go struct dump instead of the tool schema, and Qwen's official GGUFs embed a pre-fix template."
+description: "The most-downloaded function-calling datasets, rendered through the model's own tokenizer and chat template. At max_seq_len=2048, 44% of the rows in hermes-function-calling-v1's two func_calling configs are cut before the answer. Plus two things found on the way: Ollama hands the model a Go struct dump instead of the tool schema, and Qwen's official GGUFs embed a pre-fix template."
 date: 2026-10-10
 tags: [fine-tuning, tool-calling, datasets, ollama, llama.cpp]
 ---
@@ -10,17 +10,26 @@ of datasets, leave `max_seq_length` at 2,048 because the notebook did,
 and trust the loss curve. I wanted to know what the trainer actually does
 to each row — not what the JSON looks like, what bytes the model sees.
 
-So I sampled 1,500 rows from each of six datasets, rendered them through
-the Qwen2.5 chat template and tokenizer, and checked the result.
+So I took six datasets — about 1,500 sampled rows from each, and hermes read
+whole — rendered them through the Qwen2.5 chat template and tokenizer, and
+checked the result.
+
+*Corrected 11 October. Two figures below were wrong when this was first
+published: the hermes number (38%, from a flawed sample of one config,
+quoted for the whole dataset) and a claim that one conversion creates
+duplicates. Both are fixed in place and listed at the end with the other
+mistakes.*
 
 | dataset | p50 tokens | rows > 2,048 | **cut before the answer @2,048** | schema vs call | no final assistant turn |
 |---|---|---|---|---|---|
-| NousResearch/hermes-function-calling-v1 | 1,838 | 44.8% | **38.0%** | clean | **9.7%** |
+| NousResearch/hermes-function-calling-v1, `func_calling` | 2,170 | 52.4% | **45.1%** | clean | **8.6%** |
+| …same dataset, `func_calling_singleturn` | 1,135 | 41.9% | **41.9%** | clean | 0.0% |
+| …same dataset, `glaive_func_calling` | 632 | 0.2% | 0.1% | clean | 3.6% |
 | allenai/Dolci-Instruct-SFT-Tool-Use | 1,194 | 16.9% | **14.9%** | 3.8% unparseable calls | 0.1% |
 | glaiveai/glaive-function-calling-v2 | 404 | 0.2% | 0.1% | 0.3% | 1.4% |
 | lockon/xlam-function-calling-60k | 496 | 0.0% | 0.0% | 1.5% missing required | 0.0% |
 | argilla/apigen-function-calling | 482 | 0.1% | 0.0% | 1.3% missing required | 0.0% |
-| hiyouga/glaive-function-calling-v2-sharegpt | 472 | 0.1% | 0.1% | 0.1% | 0.0% (3.2% duplicates) |
+| hiyouga/glaive-function-calling-v2-sharegpt | 472 | 0.1% | 0.1% | 0.1% | 0.0% |
 
 ## The column that matters
 
@@ -36,15 +45,18 @@ was supposed to learn.
 "the Unsloth and TRL default". It is opt-in in both. The measurements are
 unchanged; the consequence is stated correctly now.*
 
-hermes carries every tool signature in the system prompt as JSON, so the
-median row is 1,838 tokens under the Qwen template and 38% of rows are
-cut before the answer at 2,048. The model is shown the answer in fewer than
-two thirds of the dataset, and nothing in the pipeline says so. At 4,096 the problem is
-gone. Dolci has the same shape at 15%, plus a single row of **334,792
+hermes carries every tool signature in the system prompt as JSON. It has
+three tool-calling configs and I read all three in full. In the two
+`func_calling` configs, 43.5% of rows (1,646 of 3,786) are cut before the
+answer at 2,048: the model is shown the answer in barely more than half of
+them, and nothing in the pipeline says so. At 4,096 the problem is gone.
+The third config, `glaive_func_calling`, is the largest and is untouched
+(0.1%), so over all three the figure is 18.4% — which number is yours
+depends on which configs you load. Dolci has the same shape at 15%, plus a single row of **334,792
 tokens** — an `environment` turn that is a 1.2 MB API response.
 
-Separately, 9.7% of hermes rows end on a `tool` message with no assistant
-reply after it. Same effect: no target.
+Separately, 8.6% of `func_calling` rows end on a `tool` message with no
+assistant reply after it. Same effect: no target.
 
 ## The smaller findings
 
@@ -58,15 +70,16 @@ schema this way, and a model learns whichever side it is shown.
 **glaive** (the original text format) writes tool-call arguments as a
 *string in single quotes*: `{"name": …, "arguments": '{…}'}`. Neither
 JSON nor Python. Every converter has to know, and hiyouga's ShareGPT
-conversion does — but it drops the system prompt, so 3.2% of rows that
-differed only there collapse into duplicates.
+conversion does. Both versions repeat about 3% of conversations under
+different tool definitions, usually the same tool with a reworded
+description — not duplicates, since the template renders the tools.
 
 **Dolci** stores calls as Python expressions. 3.8% of rows have one that
 is not: JSON literals inside Python (`stableonly=true`), tool names with
 spaces (`Historical Engagement Stats(...)`), hyphens, a bare `null`. Two
 notations at once.
 
-## Three numbers I got wrong first
+## Three numbers I got wrong first, and two I published wrong
 
 The method section in the repository records each of them, because a
 survey that only reports its final numbers is asking to be trusted
@@ -81,6 +94,17 @@ rather than checked.
 - apigen showed 500 rows calling undeclared tools — exactly one sample
   block. That block ships tools in OpenAI shape and my adapter read it as
   xLAM's flat shape.
+- **Published wrong: hermes.** This post first said 38% "of
+  hermes-function-calling-v1". That was a 1,500-row sample of one config
+  whose windows still overlapped — the fix above had not been applied to the
+  sample I reported from — leaving 1,115 distinct rows, and I quoted it for
+  the whole dataset. Read in full: 45.1% and 41.9% for the two `func_calling`
+  configs, 0.1% for the largest config.
+- **Published wrong: duplicates.** I wrote that hiyouga's conversion
+  "collapses 3.2% of rows into duplicates by dropping the system prompt". My
+  linter compared messages and ignored tools. Those rows differ in their tool
+  definitions, and the original dataset repeats conversations at the same
+  rate. The conversion is not at fault; the linter is fixed.
 
 ## Two things found on the way
 
@@ -111,9 +135,10 @@ is. The 1.5B ignores it. Reported on
 
 ## Caveats
 
-1,500 rows per dataset, so rates near 0.1% are one or two rows. The
+About 1,500 rows per dataset (hermes read whole), so in the samples rates
+near 0.1% are one or two rows. The
 truncation figures are for the Qwen2.5 template; Llama-3 or Gemma render
-tools differently and will move the hermes number, though not to zero.
+tools differently and will move the hermes numbers, though not to zero.
 The adapters from each native format are mine and are in the repository.
 
 ## The tool
