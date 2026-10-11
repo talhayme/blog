@@ -24,7 +24,7 @@ mistakes.*
 |---|---|---|---|---|---|
 | NousResearch/hermes-function-calling-v1, `func_calling` | 2,170 | 52.4% | **45.1%** | clean | **8.6%** |
 | …same dataset, `func_calling_singleturn` | 1,135 | 41.9% | **41.9%** | clean | 0.0% |
-| …same dataset, `glaive_func_calling` | 632 | 0.2% | 0.1% | clean | 3.6% |
+| …same dataset, `glaive_func_calling` | 632 | 0.2% | 0.1% | 0.2% | 3.6% |
 | allenai/Dolci-Instruct-SFT-Tool-Use | 1,194 | 16.9% | **14.9%** | 3.8% unparseable calls | 0.1% |
 | glaiveai/glaive-function-calling-v2 | 404 | 0.2% | 0.1% | 0.3% | 1.4% |
 | lockon/xlam-function-calling-60k | 496 | 0.0% | 0.0% | 1.5% missing required | 0.0% |
