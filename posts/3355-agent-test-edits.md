@@ -1,6 +1,6 @@
 ---
 title: "3,355 times a coding agent edited a test"
-description: "SWE-chat publishes real Claude Code sessions with the commits they produced. I pulled every commit where the agent changed a test and the code together, ranked them, ran seven end to end against pr-witness, and found the one thing the cross-run could not see."
+description: "SWE-chat publishes real coding-agent sessions, most of them Claude Code, with the commits they produced. I pulled every commit where the agent changed a test and the code together, ranked them, ran seven end to end against pr-witness, and found the one thing the cross-run could not see."
 date: 2026-10-11
 tags: [testing, ci, ai-agents, datasets, open-source]
 ---
@@ -23,7 +23,8 @@ against the maintainers' own test patches, and they produced the `review`
 verdict — but as a source of what agents *do* to tests they are thin.
 
 Then [SWE-chat](https://huggingface.co/datasets/SALT-NLP/SWE-chat) appeared:
-real Claude Code sessions on real repositories, with the commits they
+real coding-agent sessions on real repositories — nine agents, most of the
+sessions Claude Code — with the commits they
 produced, the full diff of each commit, and a per-file record of whether
 the agent or the human wrote the change. 62,333 commit rows, 707
 repositories, ODC-BY.
@@ -33,6 +34,11 @@ in the same commit**. In 2,781 of them a test file was written by the agent
 alone; in 1,181 more, by the agent and the human together. Keep the
 open-source licences and that is **3,355 agent-written test edits** with
 code to run them against. SWE-bench gave me seven.
+
+(3,023 of the 3,355 are from Claude Code sessions alone, 110 from Claude Code
+alongside another agent, the rest from Codex, OpenCode, Pi and Gemini CLI.
+Every commit I go on to run below is Claude Code. *Corrected 11 October: I
+first described the whole dataset as Claude Code sessions.*)
 
 ## What the edits do
 
@@ -183,8 +189,8 @@ cannot answer. I would rather know both.
 
 **The data is read-only.** Nothing was written to any repository; the
 corpus references `owner/repo` and a commit SHA, fetches the code under its
-own licence at run time, and names no one — SWE-chat's sessions carry
-usernames, and none appear. The labels are mine and say so; where
+own licence at run time, and republishes nothing about a person beyond the repository's own name — no
+session id, commit author or prompt. The labels are mine and say so; where
 SWE-bench had the maintainers' own test patch to label against, SWE-chat
 has a human reading a diff, and the README does not pretend otherwise.
 
