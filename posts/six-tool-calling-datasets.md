@@ -1,6 +1,6 @@
 ---
 title: "What the trainer does to six tool-calling datasets"
-description: "1,500 rows from each of the most-downloaded function-calling datasets, rendered through the model's own tokenizer and chat template. At max_seq_len=2048, 38% of hermes-function-calling-v1 trains nothing. Plus two things found on the way: Ollama hands the model a Go struct dump instead of the tool schema, and Qwen's official GGUFs embed a pre-fix template."
+description: "1,500 rows from each of the most-downloaded function-calling datasets, rendered through the model's own tokenizer and chat template. At max_seq_len=2048, 38% of hermes-function-calling-v1 is cut before the answer. Plus two things found on the way: Ollama hands the model a Go struct dump instead of the tool schema, and Qwen's official GGUFs embed a pre-fix template."
 date: 2026-10-10
 tags: [fine-tuning, tool-calling, datasets, ollama, llama.cpp]
 ---
@@ -25,15 +25,21 @@ the Qwen2.5 chat template and tokenizer, and checked the result.
 ## The column that matters
 
 "Cut before the answer" is a row whose final assistant turn starts past
-the cutoff. The trainer keeps the prompt and drops the answer. Under
-response-only masking — the Unsloth and TRL default — such a row
-contributes exactly zero gradient. It is not a worse example; it is not
-an example.
+the cutoff. The trainer keeps the prompt and drops the answer. Without
+loss masking such a row still trains — on the system prompt and the tool
+signatures, not on a call. With response-only masking (`assistant_only_loss`
+in TRL, `train_on_responses_only` in Unsloth; opt-in in both) it contributes
+exactly zero gradient. Either way the model is never shown the answer it
+was supposed to learn.
+
+*Correction, 11 October: this paragraph first called response-only masking
+"the Unsloth and TRL default". It is opt-in in both. The measurements are
+unchanged; the consequence is stated correctly now.*
 
 hermes carries every tool signature in the system prompt as JSON, so the
 median row is 1,838 tokens under the Qwen template and 38% of rows are
-cut before the answer at 2,048. You train on fewer than two thirds of the
-dataset, and nothing in the pipeline says so. At 4,096 the problem is
+cut before the answer at 2,048. The model is shown the answer in fewer than
+two thirds of the dataset, and nothing in the pipeline says so. At 4,096 the problem is
 gone. Dolci has the same shape at 15%, plus a single row of **334,792
 tokens** — an `environment` turn that is a 1.2 MB API response.
 
