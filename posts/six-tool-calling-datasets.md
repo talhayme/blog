@@ -1,6 +1,6 @@
 ---
 title: "What the trainer does to six tool-calling datasets"
-description: "The most-downloaded function-calling datasets, rendered through the model's own tokenizer and chat template. At max_seq_len=2048, 44% of the rows in hermes-function-calling-v1's two func_calling configs are cut before the answer. Plus two things found on the way: Ollama hands the model a Go struct dump instead of the tool schema, and Qwen's official GGUFs embed a pre-fix template."
+description: "The most-downloaded function-calling datasets, rendered through the model's own tokenizer and chat template. At max_seq_len=2048, 44% of the rows in hermes-function-calling-v1's two func_calling configs are cut before the answer. Plus two things met on the way: what a known Ollama bug costs (the model gets a Go struct dump instead of the tool schema), and a pre-fix template in Qwen's official GGUFs."
 date: 2026-10-10
 tags: [fine-tuning, tool-calling, datasets, ollama, llama.cpp]
 ---
@@ -119,9 +119,10 @@ where it was trained on a JSON schema. On the same GGUF blob at
 temperature 0, Qwen2.5-0.5B gets exact arguments right 39/40 times with
 the correct prompt and 31/40 with Ollama's — every failure the same
 invented parameter, `amount from_currency`, read straight off Go's
-`[amount from_currency to_currency]` rendering of `required`. Reported
-with the measurement on [ollama/ollama#14601](https://github.com/ollama/ollama/issues/14601);
-two open PRs fix it.
+`[amount from_currency to_currency]` rendering of `required`. The bug
+itself is known — [ollama/ollama#14601](https://github.com/ollama/ollama/issues/14601)
+has been open since March, with two PRs that fix it; what I added there
+is the measurement of what it costs.
 
 **Qwen's official Qwen2.5 GGUFs embed a pre-fix chat template.** The HF
 repo fixed a doubled-brace instruction (`{{"name": …}}`) on 2024-09-19;
