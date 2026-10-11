@@ -232,8 +232,16 @@ assertions in eight others.
 new one" — was right four times out of four.
 
 And no commit in the batch was dishonest, so on real data I still cannot
-say whether the tool catches a cheat. Only that, so far, it accuses people
-who did nothing wrong.
+say whether the tool catches a cheat.
+
+Where the misses came from matters as much as how many there were. None of
+the four false flags came from the cross-run. Three were ratings inherited
+from checkwash and passed through unchanged; one was my skip check. In two
+of the four, the cross-run's own finding — correct, at `review` — was
+already in the report, underneath the flag. And in the eleven cases where
+the cross-run ran to completion, what it reported agreed with the label
+every time. The idea this tool exists for held up on commits it had never
+seen. What failed was the layer around it that decides how loudly to speak.
 
 Those four causes are fixed in 0.3.1, and the twelve now agree with their
 labels, which means nothing: they are the cases the tool was just changed
@@ -243,7 +251,8 @@ into a match — also a fitted one. The only numbers here worth quoting are
 the frozen ones: 7 of 12, `review` 4 of 4, `flag` 0 of 4.
 
 What I would tell someone installing it today: run it in report mode and
-read what it marks for review. Do not let it fail a build.
+read what it marks for review — that part has earned it. Hold off failing
+builds on `flag` until that layer has passed a frozen batch of its own.
 
 The protocol, the selection record, the labels as committed before the runs
 and the write-up of every miss are in
