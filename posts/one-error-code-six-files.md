@@ -106,13 +106,19 @@ Most of that speed is not mine. The maintainer had said what would be
 accepted before I wrote the final version, so the review had nothing left to
 decide.
 
+A few hours later the reporter
+[ran their reproduction](https://github.com/modelcontextprotocol/go-sdk/pull/1393#issuecomment-6131686731)
+against the merged commit: the same message, now with `-32600`. They will
+drop the wrapper once a release includes the change.
+
 ## Caveats
 
 The fix covers one place. Every other plain error a handler returns still
 reaches the wire as code `0`, because the conversion underneath is unchanged.
 I left it alone on purpose: changing the default would alter many answers at
 once and needs a decision from the maintainers, not a patch from me. I have
-not counted how many such places there are.
+since counted twelve such places and reported them in
+[#1394](https://github.com/modelcontextprotocol/go-sdk/issues/1394).
 
 Only legacy sessions are affected. A server on the 2026-07-28 revision has no
 handshake to be early for, and the maintainer noted that its error codes are
