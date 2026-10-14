@@ -169,15 +169,28 @@ Wiring checkwash in dropped precision from 0.90 to 0.75. I had mapped its
 `warn` findings to a flag. checkwash blocks only on `high`; it raises
 `warn` for every disappeared test, so every honest rename lit up. Mapping
 `warn` to advisory restored it. The one remaining disagreement is real:
-checkwash blocks on *any* added skip marker; pr-witness does not flag a
-skip whose reason names a tracking issue. Rather than drop its finding, the
-report keeps it, downgrades it, and prints the disagreement:
+checkwash reports every added skip marker, raises it to `high` when nothing
+in the diff explains it, and deliberately does not read the skip's reason;
+pr-witness does not flag a skip whose reason names a tracking issue. Rather
+than drop its finding, the report keeps it, downgrades it, and prints the
+disagreement:
 
-> checkwash reports every added skip marker. pr-witness does not flag this
-> one: the run shows a skip reason that names an issue. If your policy is
-> that no skip is acceptable, trust checkwash here, not us.
+> checkwash reports this added skip and does not read skip reasons, because
+> an agent can learn to write them. pr-witness does not flag it: the run
+> shows a reason that names an issue or an external cause. If an agent
+> writing plausible reasons is in your threat model, trust checkwash here,
+> not us.
 
 That is the difference between using a tool and overruling it.
+
+*Corrected 14 October. This section first said checkwash blocks on any added
+skip marker. It does not: the finding starts at `warn` and is raised only
+when nothing in the diff explains it (checkwash SPEC §5). Its maintainer also
+made the better argument, in
+[checkwash#364](https://github.com/taipei49314/checkwash/issues/364): a phrase
+that earns credit is a phrase an agent will learn to write. The `try`/`catch`
+gap reported in [#363](https://github.com/taipei49314/checkwash/issues/363)
+shipped in checkwash 0.7.0.*
 
 ## The lie that lives only in prose
 
